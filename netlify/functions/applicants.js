@@ -39,15 +39,29 @@ exports.handler = async (event) => {
 
     if (event.httpMethod === 'PUT') {
       const d = JSON.parse(event.body || '{}');
-      if (!d.id || !d.status) { await client.end(); return bad('Butuh "id" & "status".'); }
+      if (!d.id) { await client.end(); return bad('Butuh "id" untuk update.'); }
+
+      // bangun SET dinamis dari field yang dikirim
+      const fields = ['nama','jenjang','kelas_target','sekolah_asal','jalur_daftar','sumber_info',
+        'tanggal_daftar','status','wali_nama','wali_kontak','email','catatan'];
+      const set = [];
+      const vals = [];
+      fields.forEach((f) => {
+        if (d[f] !== undefined) {
+          vals.push(d[f]); set.push(`${f} = $${vals.length}`);
+        }
+      });
+      if (!set.length) { await client.end(); return bad('Tidak ada field diupdate.'); }
+      vals.push(d.id);
+
       const r = await client.query(
-        'UPDATE applicants SET status=$1, catatan=COALESCE($2, catatan) WHERE id=$3 RETURNING *',
-        [d.status, d.catatan || null, d.id]
+        `UPDATE applicants SET ${set.join(', ')} WHERE id = $${vals.length} RETURNING *`, vals
       );
       await client.end();
-      return ok(r.rows[0] || { error: 'ID tidak ditemukan' });
+      return ok(r.rows[0] || { error:'ID tidak ditemukan' });
     }
 
+    await client.end();
     return { statusCode: 405, body: 'Method Not Allowed' };
   } catch (e) {
     console.error(e);
@@ -63,7 +77,7 @@ function resp(code, body){
     statusCode: code,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': '*',             // nanti batasi domainmu
       'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS'
     },
     body: JSON.stringify(body)
