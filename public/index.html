@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>PSB Dashboard Starter</title>
+</head>
+<body>
+  <h1>PSB Dashboard Starter</h1>
+
+  <form id="f">
+    <input id="nama" placeholder="Nama calon siswa" required />
+    <input id="jenjang" placeholder="Jenjang (mis. SD)" />
+    <input id="kelas" placeholder="Kelas target (mis. 1)" />
+    <input id="sekolah_asal" placeholder="Sekolah asal" />
+    <input id="wali" placeholder="Nama wali" />
+    <input id="kontak" placeholder="Kontak/WA wali" />
+    <button>Tambah</button>
+  </form>
+
+  <p id="msg"></p>
+
+  <table border="1" cellpadding="6" id="tbl">
+    <thead><tr>
+      <th>ID</th><th>Nama</th><th>Jenjang</th><th>Kelas</th><th>Sekolah Asal</th><th>Status</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+
+<script>
+async function loadApplicants(){
+  const res = await fetch('/.netlify/functions/applicants');
+  const rows = await res.json();
+  const tb = document.querySelector('#tbl tbody');
+  tb.innerHTML = '';
+  (rows || []).forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.id}</td><td>${r.nama||''}</td><td>${r.jenjang||''}</td>
+                    <td>${r.kelas_target||''}</td><td>${r.sekolah_asal||''}</td><td>${r.status||''}</td>`;
+    tb.appendChild(tr);
+  });
+}
+document.querySelector('#f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    nama: document.querySelector('#nama').value,
+    jenjang: document.querySelector('#jenjang').value,
+    kelas_target: document.querySelector('#kelas').value,
+    sekolah_asal: document.querySelector('#sekolah_asal').value,
+    wali_nama: document.querySelector('#wali').value,
+    wali_kontak: document.querySelector('#kontak').value,
+    status: 'baru'
+  };
+  const res = await fetch('/.netlify/functions/applicants', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  const saved = await res.json();
+  document.querySelector('#msg').textContent = saved.error ? saved.error : 'Tersimpan: ' + saved.nama;
+  await loadApplicants();
+  e.target.reset();
+});
+window.addEventListener('DOMContentLoaded', loadApplicants);
+</script>
+</body>
+</html>

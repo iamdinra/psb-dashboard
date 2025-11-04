@@ -1,0 +1,7 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+# (Optional) Set node version if needed
+#[[plugins]]
+#package = "@netlify/plugin-functions-install-core"
