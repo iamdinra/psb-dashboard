@@ -1,7 +1,3 @@
 [build]
-  publish = "public"
+  publish = "dist"            # kalau pakai Vite, hasil build = dist
   functions = "netlify/functions"
-
-# (Optional) Set node version if needed
-#[[plugins]]
-#package = "@netlify/plugin-functions-install-core"
